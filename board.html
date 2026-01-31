@@ -1,1 +1,680 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Image Codenames — Board</title>
+  <style>
+    :root{
+      --bg:#0b0f14;
+      --panel:#0f1726;
+      --text:#e6eefc;
+      --muted:#a6b5d3;
+      --border:rgba(255,255,255,.12);
+      --shadow:rgba(0,0,0,.35);
+      --radius:16px;
+
+      --red:  239, 68, 68;
+      --blue: 59, 130, 246;
+      --gray: 148, 163, 184;
+      --black: 2, 6, 23;
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      background:radial-gradient(1200px 900px at 20% 0%, #14274f 0%, var(--bg) 55%);
+      color:var(--text);
+    }
+
+    header{
+      position:sticky; top:0; z-index:10;
+      background:rgba(11,15,20,.82);
+      backdrop-filter: blur(10px);
+      border-bottom:1px solid rgba(255,255,255,.08);
+    }
+
+    .wrap{max-width:1120px;margin:0 auto;padding:14px 16px;}
+    .top{
+      display:flex;gap:12px;flex-wrap:wrap;
+      align-items:center;justify-content:space-between;
+    }
+    .brand{display:flex;gap:10px;align-items:center}
+    .dot{width:10px;height:10px;border-radius:999px;background:#5eead4;box-shadow:0 0 18px rgba(94,234,212,.35);}
+    h1{font-size:16px;margin:0;letter-spacing:.2px}
+    .sub{font-size:12px;color:var(--muted);margin-top:2px}
+
+    .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:flex-end}
+    .btn{
+      border:1px solid var(--border);
+      background:rgba(255,255,255,.06);
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:12px;
+      cursor:pointer;
+      font-weight:700;
+      letter-spacing:.2px;
+      box-shadow:0 12px 28px var(--shadow);
+      display:inline-flex; gap:8px; align-items:center;
+      user-select:none;
+    }
+    .btn:active{transform:translateY(1px)}
+    .btn.primary{background:rgba(94,234,212,.14);border-color:rgba(94,234,212,.35)}
+    .btn.danger{background:rgba(248,113,113,.14);border-color:rgba(248,113,113,.35)}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
+    .btn svg{width:18px;height:18px;display:block}
+
+    main .wrap{padding-top:16px;padding-bottom:22px}
+    .panel{
+      background:rgba(15,23,38,.72);
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:var(--radius);
+      padding:14px;
+      box-shadow:0 18px 40px var(--shadow);
+    }
+
+    .meta{
+      display:grid;gap:12px;
+      grid-template-columns: 1fr;
+      margin-bottom:12px;
+    }
+    @media (min-width: 860px){
+      .meta{grid-template-columns: 1.4fr .6fr; align-items:start;}
+    }
+
+    .pillrow{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .pill{
+      display:inline-flex;gap:8px;align-items:center;
+      padding:8px 10px;border-radius:999px;
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.10);
+      font-size:12px;color:var(--text);
+    }
+    .pill code{font-weight:900;letter-spacing:.6px}
+    .mapLink{
+      display:flex;gap:10px;align-items:center;flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+    .mapLink a{
+      color:var(--text);
+      text-decoration:none;
+      border-bottom:1px dashed rgba(255,255,255,.25);
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap:10px;
+    }
+    @media (max-width: 520px){
+      .grid{gap:8px;}
+    }
+
+    .tile{
+      position:relative;
+      border-radius:14px;
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.05);
+      box-shadow:0 14px 34px rgba(0,0,0,.35);
+      aspect-ratio: 1 / 1;
+      cursor:pointer;
+      user-select:none;
+      transform: translateZ(0);
+    }
+    .tile.selected{
+      outline:3px solid rgba(94,234,212,.55);
+      outline-offset:2px;
+    }
+    .tile img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      display:block;
+      transform:scale(1.02);
+      filter:saturate(1.02) contrast(1.02);
+    }
+
+    /* Reveal overlay: semi-transparent color, keep image visible */
+    .revealOverlay{
+      position:absolute; inset:0;
+      display:flex;
+      align-items:flex-end;
+      justify-content:flex-start;
+      padding:10px;
+      opacity:0;
+      transition:opacity .18s ease;
+      pointer-events:none;
+    }
+    .tile.revealed .revealOverlay{opacity:1;}
+    .tag{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:900;
+      letter-spacing:.3px;
+      color:rgba(255,255,255,.92);
+      background:rgba(0,0,0,.22);
+      border:1px solid rgba(255,255,255,.18);
+      backdrop-filter: blur(6px);
+    }
+    .dotSmall{width:10px;height:10px;border-radius:999px;background:rgba(255,255,255,.92);}
+
+    .tile.revealed{cursor:default;}
+    .tile.revealed.selected{outline:none;}
+
+    /* Action bar */
+    .actions{
+      position:absolute;
+      left:8px; right:8px; bottom:8px;
+      display:none;
+      gap:8px;
+      z-index:5;
+    }
+    .tile.selected:not(.revealed) .actions{display:flex;}
+    .act{
+      flex:1;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(12,18,30,.72);
+      color:var(--text);
+      border-radius:12px;
+      padding:10px 10px;
+      display:flex;gap:8px;align-items:center;justify-content:center;
+      font-weight:900;
+      cursor:pointer;
+      box-shadow:0 16px 28px rgba(0,0,0,.28);
+      backdrop-filter: blur(10px);
+    }
+    .act:hover{background:rgba(12,18,30,.86);}
+    .act svg{width:18px;height:18px}
+    .act.cancel{flex:0.7;}
+    .act.reveal{border-color:rgba(255,255,255,.22)}
+    .act.replace{border-color:rgba(94,234,212,.32)}
+    .act.cancel{border-color:rgba(248,113,113,.34)}
+
+    .status{
+      margin-top:10px;
+      color:var(--muted);
+      font-size:12px;
+      min-height: 18px;
+    }
+
+    /* QR */
+    .qrBox{
+      display:flex;gap:12px;align-items:center;justify-content:flex-end;flex-wrap:wrap;
+    }
+    .qrBox img{
+      width:120px;height:120px;border-radius:14px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.04);
+    }
+    .smallMuted{font-size:12px;color:var(--muted);max-width:360px;text-align:right}
+    .error{color:#fca5a5;font-weight:800}
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="top">
+      <div class="brand">
+        <div class="dot"></div>
+        <div>
+          <h1>Image Codenames — Board</h1>
+          <div class="sub">Tap a tile → Replace / Reveal / Cancel</div>
+        </div>
+      </div>
+      <div class="controls">
+        <button id="undoBtn" class="btn" disabled title="Undo last action">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 14l-4-4 4-4"></path><path d="M5 10h9a6 6 0 1 1 0 12h-2"></path>
+          </svg>
+          Undo
+        </button>
+        <button id="newMapBtn" class="btn danger" title="Generate a new map + new images">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12a9 9 0 1 1-3-6.7"></path><path d="M21 3v6h-6"></path>
+          </svg>
+          New map
+        </button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="panel">
+      <div class="meta">
+        <div>
+          <div class="pillrow">
+            <div class="pill">Deck: <code id="deckName">…</code></div>
+            <div class="pill">Seed: <code id="seedText">…</code></div>
+            <div class="pill">Starting team: <code id="startTeam">…</code></div>
+          </div>
+          <div class="status" id="status"></div>
+        </div>
+
+        <div class="qrBox">
+          <div>
+            <div class="smallMuted">Scan to open spymaster map on your phone:</div>
+            <div class="smallMuted"><a id="mapUrlLink" href="#" target="_blank" rel="noopener">Open map link</a></div>
+          </div>
+          <img id="qrImg" alt="QR code to spymaster map" />
+        </div>
+      </div>
+
+      <div class="grid" id="grid"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+/** ---------- Seed utils (deterministic) ---------- **/
+function cyrb128(str) {
+  let h1 = 1779033703, h2 = 3144134277, h3 = 1013904242, h4 = 2773480762;
+  for (let i = 0, k; i < str.length; i++) {
+    k = str.charCodeAt(i);
+    h1 = h2 ^ Math.imul(h1 ^ k, 597399067);
+    h2 = h3 ^ Math.imul(h2 ^ k, 2869860233);
+    h3 = h4 ^ Math.imul(h3 ^ k, 951274213);
+    h4 = h1 ^ Math.imul(h4 ^ k, 2716044179);
+  }
+  h1 = Math.imul(h3 ^ (h1 >>> 18), 597399067);
+  h2 = Math.imul(h4 ^ (h2 >>> 22), 2869860233);
+  h3 = Math.imul(h1 ^ (h3 >>> 17), 951274213);
+  h4 = Math.imul(h2 ^ (h4 >>> 19), 2716044179);
+  return [(h1^h2^h3^h4)>>>0, (h2^h1)>>>0, (h3^h1)>>>0, (h4^h1)>>>0];
+}
+function mulberry32(a) {
+  return function() {
+    let t = a += 0x6D2B79F5;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }
+}
+function makeRng(seedStr){
+  const s = cyrb128(seedStr)[0];
+  return mulberry32(s);
+}
+function shuffleInPlace(arr, rng){
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+function randomSeed(){
+  // Friendly short seed
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let out = "";
+  for(let i=0;i<8;i++){
+    out += chars[Math.floor(Math.random()*chars.length)];
+    if (i===3) out += "-";
+  }
+  return out;
+}
+function getParam(name){
+  const u = new URL(location.href);
+  return u.searchParams.get(name);
+}
+function setParams(seed, deck){
+  const u = new URL(location.href);
+  u.searchParams.set("seed", seed);
+  if (deck) u.searchParams.set("deck", deck);
+  history.replaceState(null, "", u.toString());
+}
+
+/** ---------- Game logic ---------- **/
+const ROLES = { RED:"red", BLUE:"blue", GRAY:"gray", BLACK:"black" };
+
+function roleCounts(startingTeam){
+  // Standard: 1 black, 7 gray, 9 for starter, 8 for other
+  const starter = startingTeam === ROLES.RED ? ROLES.RED : ROLES.BLUE;
+  const other = starter === ROLES.RED ? ROLES.BLUE : ROLES.RED;
+  return { [starter]:9, [other]:8, [ROLES.GRAY]:7, [ROLES.BLACK]:1 };
+}
+
+function makeRoles(seedStr){
+  const rng = makeRng(seedStr + "|roles");
+  const startingTeam = rng() < 0.5 ? ROLES.RED : ROLES.BLUE;
+
+  const counts = roleCounts(startingTeam);
+  const roles = [];
+  for (const [r, n] of Object.entries(counts)){
+    for (let i=0;i<n;i++) roles.push(r);
+  }
+  shuffleInPlace(roles, rng);
+  return { roles, startingTeam };
+}
+
+// Bag that goes through the whole deck before reusing, and skips images currently on board.
+function makeBag(seedStr, deckSize){
+  const rng = makeRng(seedStr + "|bag");
+  let bag = Array.from({length: deckSize}, (_,i)=>i);
+  shuffleInPlace(bag, rng);
+  let ptr = 0;
+
+  function refill(){
+    bag = Array.from({length: deckSize}, (_,i)=>i);
+    shuffleInPlace(bag, rng);
+    ptr = 0;
+  }
+
+  function drawNext(excludeSet){
+    // Try to find next not excluded
+    let attempts = 0;
+    while (attempts < deckSize * 2) {
+      if (ptr >= bag.length) refill();
+      const idx = bag[ptr++];
+      if (!excludeSet.has(idx)) return idx;
+      attempts++;
+    }
+    // If deck is tiny and everything excluded, allow reuse as last resort
+    if (ptr >= bag.length) refill();
+    return bag[ptr++ % bag.length];
+  }
+
+  return { drawNext };
+}
+
+/** ---------- UI ---------- **/
+const gridEl = document.getElementById("grid");
+const statusEl = document.getElementById("status");
+const seedTextEl = document.getElementById("seedText");
+const deckNameEl = document.getElementById("deckName");
+const startTeamEl = document.getElementById("startTeam");
+const undoBtn = document.getElementById("undoBtn");
+const newMapBtn = document.getElementById("newMapBtn");
+const qrImg = document.getElementById("qrImg");
+const mapUrlLink = document.getElementById("mapUrlLink");
+
+let deck = null;
+let state = null; // { seed, roles[25], startingTeam, tileImgIdx[25], revealed[25] }
+let bag = null;
+let selectedIdx = null;
+let actionStack = []; // undo actions
+
+function iconSwap(){
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+    stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-9 9"></path><path d="M3 12a9 9 0 0 1 9-9"></path><path d="M16 16l-4 4 4 4" transform="translate(0,-8)"></path><path d="M8 8l4-4-4-4" transform="translate(0,8)"></path></svg>`;
+}
+function iconEye(){
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+    stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
+}
+function iconX(){
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+    stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="M6 6l12 12"></path></svg>`;
+}
+
+function roleLabel(role){
+  if (role === ROLES.RED) return "RED";
+  if (role === ROLES.BLUE) return "BLUE";
+  if (role === ROLES.GRAY) return "NEUTRAL";
+  return "ASSASSIN";
+}
+
+function overlayStyle(role){
+  // ~80% opacity overlay (tweakable)
+  if (role === ROLES.RED) return `background: rgba(var(--red), .78);`;
+  if (role === ROLES.BLUE) return `background: rgba(var(--blue), .78);`;
+  if (role === ROLES.GRAY) return `background: rgba(var(--gray), .72);`;
+  return `background: rgba(var(--black), .78);`;
+}
+
+function dotStyle(role){
+  if (role === ROLES.RED) return `background: rgba(var(--red), .95);`;
+  if (role === ROLES.BLUE) return `background: rgba(var(--blue), .95);`;
+  if (role === ROLES.GRAY) return `background: rgba(var(--gray), .95);`;
+  return `background: rgba(var(--black), .95);`;
+}
+
+function setStatus(msg, isError=false){
+  statusEl.className = "status" + (isError ? " error" : "");
+  statusEl.textContent = msg || "";
+}
+
+function clearSelection(){
+  selectedIdx = null;
+  document.querySelectorAll(".tile.selected").forEach(el => el.classList.remove("selected"));
+}
+
+function updateUndoButton(){
+  undoBtn.disabled = actionStack.length === 0;
+}
+
+function undo(){
+  const a = actionStack.pop();
+  if (!a) return;
+
+  if (a.type === "reveal"){
+    state.revealed[a.idx] = false;
+    renderTile(a.idx);
+  } else if (a.type === "replace"){
+    state.tileImgIdx[a.idx] = a.prevImgIdx;
+    renderTile(a.idx);
+  }
+  updateUndoButton();
+}
+
+function confirmNewMap(){
+  const ok = confirm("Create a NEW map and NEW images? (This resets the board)");
+  if (!ok) return;
+  const deckParam = getParam("deck") || "deck.json";
+  const seed = randomSeed();
+  const u = new URL(location.href);
+  u.searchParams.set("seed", seed);
+  u.searchParams.set("deck", deckParam);
+  location.href = u.toString();
+}
+
+function buildMapUrl(){
+  const u = new URL(location.href);
+  // Swap to map.html in same folder
+  const base = u.toString().split("?")[0];
+  const mapUrl = base.replace(/board\.html$/i, "map.html");
+  const deckParam = getParam("deck") || "deck.json";
+  const seedParam = state.seed;
+  const out = new URL(mapUrl);
+  out.searchParams.set("seed", seedParam);
+  out.searchParams.set("deck", deckParam);
+  return out.toString();
+}
+
+function updateQr(){
+  const url = buildMapUrl();
+  mapUrlLink.href = url;
+
+  // Use a simple external QR image service (requires internet, which you already need for hosted images).
+  // If you later want a fully offline QR, we can embed a tiny generator.
+  const qr = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" + encodeURIComponent(url);
+  qrImg.src = qr;
+}
+
+function renderAll(){
+  seedTextEl.textContent = state.seed;
+  deckNameEl.textContent = deck?.name || "Deck";
+  startTeamEl.textContent = (state.startingTeam === ROLES.RED) ? "RED (9)" : "BLUE (9)";
+  updateQr();
+
+  gridEl.innerHTML = "";
+  for (let i=0;i<25;i++){
+    const tile = document.createElement("div");
+    tile.className = "tile";
+    tile.dataset.idx = String(i);
+
+    tile.innerHTML = `
+      <img alt="tile image" draggable="false" />
+      <div class="revealOverlay" style="${overlayStyle(state.roles[i])}">
+        <div class="tag">
+          <span class="dotSmall" style="${dotStyle(state.roles[i])}"></span>
+          <span>${roleLabel(state.roles[i])}</span>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="act replace" title="Replace image">${iconSwap()} Replace</button>
+        <button class="act reveal" title="Reveal color">${iconEye()} Reveal</button>
+        <button class="act cancel" title="Cancel">${iconX()}</button>
+      </div>
+    `;
+
+    tile.addEventListener("click", (e) => {
+      const idx = Number(tile.dataset.idx);
+
+      // If revealed, ignore any selection/menu
+      if (state.revealed[idx]) return;
+
+      // If click on action buttons, handlers below will run
+      const target = e.target;
+      if (target.closest(".act")) return;
+
+      // Toggle selection
+      if (selectedIdx === idx) {
+        clearSelection();
+      } else {
+        clearSelection();
+        selectedIdx = idx;
+        tile.classList.add("selected");
+      }
+    });
+
+    // Action handlers
+    tile.querySelector(".act.cancel").addEventListener("click", (e) => {
+      e.stopPropagation();
+      clearSelection();
+    });
+
+    tile.querySelector(".act.reveal").addEventListener("click", (e) => {
+      e.stopPropagation();
+      const idx = Number(tile.dataset.idx);
+      doReveal(idx);
+      clearSelection();
+    });
+
+    tile.querySelector(".act.replace").addEventListener("click", (e) => {
+      e.stopPropagation();
+      const idx = Number(tile.dataset.idx);
+      doReplace(idx);
+      // keep selection on same tile so you can reveal after if you want
+      // (or close it—your call; this keeps it open)
+      clearSelection();
+    });
+
+    gridEl.appendChild(tile);
+    renderTile(i);
+  }
+
+  setStatus("Ready. Tap a tile to choose Replace / Reveal / Cancel.");
+}
+
+function renderTile(i){
+  const tile = gridEl.querySelector(`.tile[data-idx="${i}"]`);
+  if (!tile) return;
+
+  const imgEl = tile.querySelector("img");
+  const imgIdx = state.tileImgIdx[i];
+  const img = deck.images[imgIdx];
+  imgEl.src = img.src;
+
+  if (state.revealed[i]) tile.classList.add("revealed");
+  else tile.classList.remove("revealed");
+}
+
+function doReveal(idx){
+  if (state.revealed[idx]) return;
+  state.revealed[idx] = true;
+  actionStack.push({ type:"reveal", idx });
+  updateUndoButton();
+  renderTile(idx);
+}
+
+function doReplace(idx){
+  if (state.revealed[idx]) return;
+
+  // Exclude all images currently on board
+  const exclude = new Set(state.tileImgIdx);
+  const next = bag.drawNext(exclude);
+
+  const prev = state.tileImgIdx[idx];
+  if (next === prev) return; // nothing changed
+
+  state.tileImgIdx[idx] = next;
+  actionStack.push({ type:"replace", idx, prevImgIdx: prev });
+  updateUndoButton();
+  renderTile(idx);
+}
+
+/** Close tile actions if you tap outside tiles */
+document.addEventListener("click", (e) => {
+  const tile = e.target.closest(".tile");
+  if (!tile) clearSelection();
+});
+
+undoBtn.addEventListener("click", undo);
+newMapBtn.addEventListener("click", confirmNewMap);
+
+/** ---------- Boot ---------- **/
+async function loadDeck(deckUrl){
+  const res = await fetch(deckUrl, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch " + deckUrl + " (" + res.status + ")");
+  const d = await res.json();
+  if (!d?.images || !Array.isArray(d.images)) throw new Error("deck.json must have { images: [...] }");
+  if (d.images.length < 25) throw new Error("Deck must contain at least 25 images.");
+  return d;
+}
+
+function initGame(seedStr){
+  const { roles, startingTeam } = makeRoles(seedStr);
+
+  // Choose initial 25 images deterministically using seed as well
+  const rng = makeRng(seedStr + "|images");
+  const allIdx = Array.from({length: deck.images.length}, (_,i)=>i);
+  shuffleInPlace(allIdx, rng);
+  const tileImgIdx = allIdx.slice(0,25);
+
+  state = {
+    seed: seedStr,
+    roles,
+    startingTeam,
+    tileImgIdx,
+    revealed: Array(25).fill(false)
+  };
+
+  bag = makeBag(seedStr, deck.images.length);
+
+  // Advance the bag pointer a bit so replacements continue after initial selection,
+  // but still deterministic:
+  // We "consume" the deck positions we used for the board first.
+  // (This is optional but keeps “go through pile” behavior feeling natural.)
+  const exclude = new Set(state.tileImgIdx);
+  // We won't actually draw, we just ensure future draws skip board images anyway.
+
+  actionStack = [];
+  updateUndoButton();
+}
+
+(async function(){
+  try{
+    const deckParam = getParam("deck") || "deck.json";
+    let seedParam = getParam("seed");
+    if (!seedParam) seedParam = randomSeed();
+
+    setParams(seedParam, deckParam);
+
+    setStatus("Loading deck…");
+    deck = await loadDeck(deckParam);
+
+    initGame(seedParam);
+    renderAll();
+  } catch(err){
+    console.error(err);
+    setStatus(err.message || String(err), true);
+  }
+})();
+</script>
+</body>
+</html>
 
