@@ -656,7 +656,7 @@ function renderAll(){
 }
 
 function renderTile(i){
-  const tile = gridEl.querySelector(\`.tile[data-idx="\${i}"]\`);
+  const tile = gridEl.querySelector(`.tile[data-idx="${i}"]`);
   if (!tile) return;
 
   const imgEl = tile.querySelector("img");
