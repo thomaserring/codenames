@@ -7,11 +7,8 @@
   <style>
     :root{
       --bg:#0b0f14;
-      --panel:#0f1726;
       --text:#e6eefc;
       --muted:#a6b5d3;
-      --border:rgba(255,255,255,.12);
-      --shadow:rgba(0,0,0,.35);
       --radius:16px;
 
       --red:  239, 68, 68;
@@ -21,11 +18,8 @@
 
       --sideW: 330px;
       --gap: 14px;
-
-      /* JS will update this to keep grid perfectly in view */
-      --boardSize: 600px;
+      --boardSize: 600px; /* updated by JS */
     }
-
     *{box-sizing:border-box}
     html, body { height: 100%; }
     body{
@@ -33,9 +27,8 @@
       font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
       background:radial-gradient(1200px 900px at 20% 0%, #14274f 0%, var(--bg) 55%);
       color:var(--text);
-      overflow:hidden; /* critical: prevent accidental scrolling during play */
+      overflow:hidden;
     }
-
     .app{
       height: 100vh;
       height: 100dvh;
@@ -48,31 +41,17 @@
       padding-right: calc(var(--gap) + env(safe-area-inset-right));
     }
 
-    /* Board area */
-    .boardArea{
-      flex:1;
-      min-width:0;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-    }
-    .boardWrap{
-      width: var(--boardSize);
-      height: var(--boardSize);
-      max-width: 100%;
-      max-height: 100%;
-    }
+    .boardArea{ flex:1; min-width:0; display:flex; align-items:center; justify-content:center; }
+    .boardWrap{ width: var(--boardSize); height: var(--boardSize); max-width:100%; max-height:100%; }
 
     .grid{
-      width:100%;
-      height:100%;
+      width:100%; height:100%;
       display:grid;
       grid-template-columns: repeat(5, 1fr);
       grid-template-rows: repeat(5, 1fr);
       gap: 10px;
     }
 
-    /* Tiles */
     .tile{
       position:relative;
       border-radius:14px;
@@ -84,25 +63,12 @@
       user-select:none;
       transform: translateZ(0);
     }
-    .tile.selected{
-      outline:3px solid rgba(94,234,212,.55);
-      outline-offset:2px;
-    }
-    .tile img{
-      width:100%;
-      height:100%;
-      object-fit:cover;
-      display:block;
-      transform:scale(1.02);
-      filter:saturate(1.02) contrast(1.02);
-    }
+    .tile.selected{ outline:3px solid rgba(94,234,212,.55); outline-offset:2px; }
+    .tile img{ width:100%; height:100%; object-fit:cover; display:block; transform:scale(1.02); }
 
-    /* Reveal overlay: semi-transparent */
     .revealOverlay{
       position:absolute; inset:0;
-      display:flex;
-      align-items:flex-end;
-      justify-content:flex-start;
+      display:flex; align-items:flex-end; justify-content:flex-start;
       padding:10px;
       opacity:0;
       transition:opacity .16s ease;
@@ -111,11 +77,8 @@
     .tile.revealed .revealOverlay{opacity:1;}
     .tag{
       display:inline-flex;align-items:center;gap:8px;
-      padding:6px 10px;
-      border-radius:999px;
-      font-size:12px;
-      font-weight:900;
-      letter-spacing:.3px;
+      padding:6px 10px;border-radius:999px;
+      font-size:12px;font-weight:900;letter-spacing:.3px;
       color:rgba(255,255,255,.92);
       background:rgba(0,0,0,.22);
       border:1px solid rgba(255,255,255,.18);
@@ -126,13 +89,10 @@
     .tile.revealed{cursor:default;}
     .tile.revealed.selected{outline:none;}
 
-    /* Action bar on selected tile */
     .actions{
       position:absolute;
       left:8px; right:8px; bottom:8px;
-      display:none;
-      gap:8px;
-      z-index:5;
+      display:none; gap:8px; z-index:5;
     }
     .tile.selected:not(.revealed) .actions{display:flex;}
     .act{
@@ -149,13 +109,11 @@
       backdrop-filter: blur(10px);
       user-select:none;
     }
-    .act:hover{background:rgba(12,18,30,.86);}
     .act svg{width:18px;height:18px}
-    .act.cancel{flex:0.75;}
+    .act:hover{background:rgba(12,18,30,.86);}
+    .act.cancel{flex:0.75; border-color:rgba(248,113,113,.34)}
     .act.replace{border-color:rgba(94,234,212,.32)}
-    .act.cancel{border-color:rgba(248,113,113,.34)}
 
-    /* Sidebar */
     .side{
       width: var(--sideW);
       flex: 0 0 var(--sideW);
@@ -164,18 +122,13 @@
       border-radius: var(--radius);
       box-shadow:0 18px 40px rgba(0,0,0,.35);
       padding: 14px;
-      display:flex;
-      flex-direction:column;
-      gap: 12px;
+      display:flex; flex-direction:column; gap: 12px;
       overflow:auto;
     }
-
-    .brand{
-      display:flex;gap:10px;align-items:center;
-    }
+    .brand{display:flex;gap:10px;align-items:center}
     .dot{width:10px;height:10px;border-radius:999px;background:#5eead4;box-shadow:0 0 18px rgba(94,234,212,.35);}
     .title{font-size:16px;margin:0;letter-spacing:.2px;font-weight:900}
-    .sub{font-size:12px;color:var(--muted);margin-top:2px}
+    .sub{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.25}
 
     .pillrow{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
     .pill{
@@ -190,7 +143,7 @@
     .btnrow{display:flex;gap:10px;flex-wrap:wrap}
     .btn{
       flex:1;
-      border:1px solid var(--border);
+      border:1px solid rgba(255,255,255,.12);
       background:rgba(255,255,255,.06);
       color:var(--text);
       padding:10px 12px;
@@ -202,14 +155,12 @@
       display:inline-flex; gap:8px; align-items:center; justify-content:center;
       user-select:none;
     }
+    .btn:disabled{opacity:.5;cursor:not-allowed}
     .btn:active{transform:translateY(1px)}
     .btn.danger{background:rgba(248,113,113,.14);border-color:rgba(248,113,113,.35)}
-    .btn:disabled{opacity:.5;cursor:not-allowed}
     .btn svg{width:18px;height:18px}
 
-    .qrBox{
-      display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;
-    }
+    .qrBox{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
     .qrBox img{
       width:124px;height:124px;border-radius:14px;
       border:1px solid rgba(255,255,255,.12);
@@ -218,14 +169,10 @@
     .smallMuted{font-size:12px;color:var(--muted);line-height:1.25}
     .smallMuted a{ color: var(--text); text-decoration:none; border-bottom:1px dashed rgba(255,255,255,.25); }
 
-    .status{
-      color:var(--muted);
-      font-size:12px;
-      min-height: 18px;
-    }
+    .status{color:var(--muted);font-size:12px;min-height:18px}
     .error{color:#fca5a5;font-weight:900}
 
-    /* Mobile: collapse sidebar into a drawer */
+    /* Drawer for small screens */
     .drawerBtn{
       display:none;
       position:fixed;
@@ -244,17 +191,17 @@
     }
     .drawerBtn svg{width:18px;height:18px;vertical-align:-3px;margin-right:8px}
 
+    .drawerOverlay{display:none}
     @media (max-width: 860px){
-      .side{ display:none; }
-      .drawerBtn{ display:block; }
-      .app{ padding-right: var(--gap); }
+      .side{display:none}
+      .drawerBtn{display:block}
       .drawerOverlay{
         display:none;
         position:fixed; inset:0;
         background:rgba(0,0,0,.45);
         z-index:60;
       }
-      .drawerOverlay.open{ display:block; }
+      .drawerOverlay.open{display:block}
       .drawer{
         position:fixed;
         top: calc(var(--gap) + env(safe-area-inset-top));
@@ -292,9 +239,7 @@
       </div>
     </div>
 
-    <aside class="side" id="sidePanel">
-      <!-- Side panel content injected by JS (same as drawer content) -->
-    </aside>
+    <aside class="side" id="sidePanel"></aside>
   </div>
 
 <script>
@@ -312,7 +257,7 @@ function cyrb128(str) {
   h2 = Math.imul(h4 ^ (h2 >>> 22), 2869860233);
   h3 = Math.imul(h1 ^ (h3 >>> 17), 951274213);
   h4 = Math.imul(h2 ^ (h4 >>> 19), 2716044179);
-  return [(h1^h2^h3^h4)>>>0, (h2^h1)>>>0, (h3^h1)>>>0, (h4^h1)>>>0];
+  return [(h1^h2^h3^h4)>>>0];
 }
 function mulberry32(a) {
   return function() {
@@ -322,10 +267,7 @@ function mulberry32(a) {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   }
 }
-function makeRng(seedStr){
-  const s = cyrb128(seedStr)[0];
-  return mulberry32(s);
-}
+function makeRng(seedStr){ return mulberry32(cyrb128(seedStr)[0]); }
 function shuffleInPlace(arr, rng){
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));
@@ -342,10 +284,7 @@ function randomSeed(){
   }
   return out;
 }
-function getParam(name){
-  const u = new URL(location.href);
-  return u.searchParams.get(name);
-}
+function getParam(name){ return new URL(location.href).searchParams.get(name); }
 function setParams(seed, deck){
   const u = new URL(location.href);
   u.searchParams.set("seed", seed);
@@ -355,7 +294,6 @@ function setParams(seed, deck){
 
 /** ---------- Game logic ---------- **/
 const ROLES = { RED:"red", BLUE:"blue", GRAY:"gray", BLACK:"black" };
-
 function roleCounts(startingTeam){
   const starter = startingTeam === ROLES.RED ? ROLES.RED : ROLES.BLUE;
   const other = starter === ROLES.RED ? ROLES.BLUE : ROLES.RED;
@@ -364,7 +302,6 @@ function roleCounts(startingTeam){
 function makeRoles(seedStr){
   const rng = makeRng(seedStr + "|roles");
   const startingTeam = rng() < 0.5 ? ROLES.RED : ROLES.BLUE;
-
   const counts = roleCounts(startingTeam);
   const roles = [];
   for (const [r, n] of Object.entries(counts)){
@@ -373,20 +310,16 @@ function makeRoles(seedStr){
   shuffleInPlace(roles, rng);
   return { roles, startingTeam };
 }
-
-// Bag: goes through pile before reusing; skip images currently on board
 function makeBag(seedStr, deckSize){
   const rng = makeRng(seedStr + "|bag");
   let bag = Array.from({length: deckSize}, (_,i)=>i);
   shuffleInPlace(bag, rng);
   let ptr = 0;
-
   function refill(){
     bag = Array.from({length: deckSize}, (_,i)=>i);
     shuffleInPlace(bag, rng);
     ptr = 0;
   }
-
   function drawNext(excludeSet){
     let attempts = 0;
     while (attempts < deckSize * 2) {
@@ -395,11 +328,9 @@ function makeBag(seedStr, deckSize){
       if (!excludeSet.has(idx)) return idx;
       attempts++;
     }
-    // Last resort if deck tiny and everything excluded:
     if (ptr >= bag.length) refill();
     return bag[ptr++ % bag.length];
   }
-
   return { drawNext };
 }
 
@@ -411,45 +342,16 @@ const drawerOverlay = document.getElementById("drawerOverlay");
 const drawerEl = document.getElementById("drawer");
 
 let deck = null;
-let state = null; // { seed, roles[25], startingTeam, tileImgIdx[25], revealed[25] }
+let state = null;
 let bag = null;
 let selectedIdx = null;
 let actionStack = [];
 
-function iconUndo(){
-  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-    stroke-linecap="round" stroke-linejoin="round">
-    <path d="M9 14l-4-4 4-4"></path><path d="M5 10h9a6 6 0 1 1 0 12h-2"></path>
-  </svg>`;
-}
-function iconRefresh(){
-  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-    stroke-linecap="round" stroke-linejoin="round">
-    <path d="M21 12a9 9 0 1 1-3-6.7"></path><path d="M21 3v6h-6"></path>
-  </svg>`;
-}
-function iconSwap(){
-  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-    stroke-linecap="round" stroke-linejoin="round">
-    <path d="M21 12a9 9 0 0 1-9 9"></path>
-    <path d="M3 12a9 9 0 0 1 9-9"></path>
-    <path d="M16 16l-4 4 4 4" transform="translate(0,-8)"></path>
-    <path d="M8 8l4-4-4-4" transform="translate(0,8)"></path>
-  </svg>`;
-}
-function iconEye(){
-  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-    stroke-linecap="round" stroke-linejoin="round">
-    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path>
-    <circle cx="12" cy="12" r="3"></circle>
-  </svg>`;
-}
-function iconX(){
-  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-    stroke-linecap="round" stroke-linejoin="round">
-    <path d="M18 6 6 18"></path><path d="M6 6l12 12"></path>
-  </svg>`;
-}
+function iconUndo(){return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14l-4-4 4-4"></path><path d="M5 10h9a6 6 0 1 1 0 12h-2"></path></svg>`;}
+function iconRefresh(){return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"></path><path d="M21 3v6h-6"></path></svg>`;}
+function iconSwap(){return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-9 9"></path><path d="M3 12a9 9 0 0 1 9-9"></path><path d="M16 16l-4 4 4 4" transform="translate(0,-8)"></path><path d="M8 8l4-4-4-4" transform="translate(0,8)"></path></svg>`;}
+function iconEye(){return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;}
+function iconX(){return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="M6 6l12 12"></path></svg>`;}
 
 function roleLabel(role){
   if (role === ROLES.RED) return "RED";
@@ -470,45 +372,9 @@ function dotStyle(role){
   return `background: rgba(var(--black), .95);`;
 }
 
-function setStatus(msg, isError=false){
-  const el = document.getElementById("status");
-  el.className = "status" + (isError ? " error" : "");
-  el.textContent = msg || "";
-}
-
 function clearSelection(){
   selectedIdx = null;
   document.querySelectorAll(".tile.selected").forEach(el => el.classList.remove("selected"));
-}
-
-function updateUndoButton(){
-  const undoBtn = document.getElementById("undoBtn");
-  if (undoBtn) undoBtn.disabled = actionStack.length === 0;
-}
-
-function undo(){
-  const a = actionStack.pop();
-  if (!a) return;
-
-  if (a.type === "reveal"){
-    state.revealed[a.idx] = false;
-    renderTile(a.idx);
-  } else if (a.type === "replace"){
-    state.tileImgIdx[a.idx] = a.prevImgIdx;
-    renderTile(a.idx);
-  }
-  updateUndoButton();
-}
-
-function confirmNewMap(){
-  const ok = confirm("Create a NEW map and NEW images? (This resets the board)");
-  if (!ok) return;
-  const deckParam = getParam("deck") || "deck.json";
-  const seed = randomSeed();
-  const u = new URL(location.href);
-  u.searchParams.set("seed", seed);
-  u.searchParams.set("deck", deckParam);
-  location.href = u.toString();
 }
 
 function buildMapUrl(){
@@ -516,24 +382,13 @@ function buildMapUrl(){
   const base = u.toString().split("?")[0];
   const mapUrl = base.replace(/board\.html$/i, "map.html");
   const deckParam = getParam("deck") || "deck.json";
-  const seedParam = state.seed;
   const out = new URL(mapUrl);
-  out.searchParams.set("seed", seedParam);
+  out.searchParams.set("seed", state.seed);
   out.searchParams.set("deck", deckParam);
   return out.toString();
 }
 
-function updateQr(){
-  const url = buildMapUrl();
-  const linkEl = document.getElementById("mapUrlLink");
-  const qrImg = document.getElementById("qrImg");
-
-  linkEl.href = url;
-  const qr = "https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=" + encodeURIComponent(url);
-  qrImg.src = qr;
-}
-
-function renderSideContent(container){
+function renderPanel(container){
   container.innerHTML = `
     <div class="brand">
       <div class="dot"></div>
@@ -544,53 +399,89 @@ function renderSideContent(container){
     </div>
 
     <div class="pillrow">
-      <div class="pill">Deck: <code id="deckName">…</code></div>
-      <div class="pill">Seed: <code id="seedText">…</code></div>
-      <div class="pill">Start: <code id="startTeam">…</code></div>
+      <div class="pill">Deck: <code data-k="deckName">…</code></div>
+      <div class="pill">Seed: <code data-k="seedText">…</code></div>
+      <div class="pill">Start: <code data-k="startTeam">…</code></div>
     </div>
 
     <div class="btnrow">
-      <button id="undoBtn" class="btn" disabled title="Undo last action">
-        ${iconUndo()} Undo
-      </button>
-      <button id="newMapBtn" class="btn danger" title="Generate a new map + new images">
-        ${iconRefresh()} New map
-      </button>
+      <button class="btn" data-k="undoBtn" disabled>${iconUndo()} Undo</button>
+      <button class="btn danger" data-k="newMapBtn">${iconRefresh()} New map</button>
     </div>
 
     <div class="qrBox">
-      <div style="flex:1; min-width: 160px;">
+      <div style="flex:1; min-width:160px;">
         <div class="smallMuted">Scan to open spymaster map:</div>
-        <div class="smallMuted"><a id="mapUrlLink" href="#" target="_blank" rel="noopener">Open map link</a></div>
+        <div class="smallMuted"><a data-k="mapUrlLink" href="#" target="_blank" rel="noopener">Open map link</a></div>
       </div>
-      <img id="qrImg" alt="QR code to spymaster map" />
+      <img data-k="qrImg" alt="QR code to spymaster map" />
     </div>
 
-    <div id="status" class="status"></div>
+    <div class="status" data-k="status"></div>
   `;
 
-  container.querySelector("#undoBtn").addEventListener("click", undo);
-  container.querySelector("#newMapBtn").addEventListener("click", confirmNewMap);
+  container.querySelector('[data-k="undoBtn"]').addEventListener("click", undo);
+  container.querySelector('[data-k="newMapBtn"]').addEventListener("click", confirmNewMap);
+}
+
+function setPanelValues(container){
+  container.querySelector('[data-k="seedText"]').textContent = state.seed;
+  container.querySelector('[data-k="deckName"]').textContent = deck?.name || "Deck";
+  container.querySelector('[data-k="startTeam"]').textContent = (state.startingTeam === ROLES.RED) ? "RED (9)" : "BLUE (9)";
+  const mapUrl = buildMapUrl();
+  container.querySelector('[data-k="mapUrlLink"]').href = mapUrl;
+  container.querySelector('[data-k="qrImg"]').src =
+    "https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=" + encodeURIComponent(mapUrl);
+
+  const undoBtn = container.querySelector('[data-k="undoBtn"]');
+  undoBtn.disabled = actionStack.length === 0;
+}
+
+function setStatusAll(msg, isError=false){
+  for (const c of [sidePanelEl, drawerEl]){
+    const s = c.querySelector('[data-k="status"]');
+    if (!s) continue;
+    s.textContent = msg || "";
+    s.className = "status" + (isError ? " error" : "");
+  }
+}
+
+function updateUndoButtons(){
+  for (const c of [sidePanelEl, drawerEl]){
+    const b = c.querySelector('[data-k="undoBtn"]');
+    if (b) b.disabled = actionStack.length === 0;
+  }
+}
+
+function undo(){
+  const a = actionStack.pop();
+  if (!a) return;
+  if (a.type === "reveal"){
+    state.revealed[a.idx] = false;
+    renderTile(a.idx);
+  } else if (a.type === "replace"){
+    state.tileImgIdx[a.idx] = a.prevImgIdx;
+    renderTile(a.idx);
+  }
+  updateUndoButtons();
+}
+
+function confirmNewMap(){
+  if (!confirm("Create a NEW map and NEW images? (This resets the board)")) return;
+  const deckParam = getParam("deck") || "deck.json";
+  const seed = randomSeed();
+  const u = new URL(location.href);
+  u.searchParams.set("seed", seed);
+  u.searchParams.set("deck", deckParam);
+  location.href = u.toString();
 }
 
 function renderAll(){
-  // Render side panel and drawer content (same content in both places)
-  renderSideContent(sidePanelEl);
-  renderSideContent(drawerEl);
+  renderPanel(sidePanelEl);
+  renderPanel(drawerEl);
 
-  document.getElementById("seedText").textContent = state.seed;
-  document.getElementById("deckName").textContent = deck?.name || "Deck";
-  document.getElementById("startTeam").textContent = (state.startingTeam === ROLES.RED) ? "RED (9)" : "BLUE (9)";
-
-  // Drawer duplicates IDs, so update those too:
-  drawerEl.querySelector("#seedText").textContent = state.seed;
-  drawerEl.querySelector("#deckName").textContent = deck?.name || "Deck";
-  drawerEl.querySelector("#startTeam").textContent = (state.startingTeam === ROLES.RED) ? "RED (9)" : "BLUE (9)";
-  updateQr();
-  // updateQr updated only first IDs; set for drawer too:
-  const mapUrl = buildMapUrl();
-  drawerEl.querySelector("#mapUrlLink").href = mapUrl;
-  drawerEl.querySelector("#qrImg").src = "https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=" + encodeURIComponent(mapUrl);
+  setPanelValues(sidePanelEl);
+  setPanelValues(drawerEl);
 
   gridEl.innerHTML = "";
   for (let i=0;i<25;i++){
@@ -633,15 +524,13 @@ function renderAll(){
 
     tile.querySelector(".act.reveal").addEventListener("click", (e) => {
       e.stopPropagation();
-      const idx = Number(tile.dataset.idx);
-      doReveal(idx);
+      doReveal(Number(tile.dataset.idx));
       clearSelection();
     });
 
     tile.querySelector(".act.replace").addEventListener("click", (e) => {
       e.stopPropagation();
-      const idx = Number(tile.dataset.idx);
-      doReplace(idx);
+      doReplace(Number(tile.dataset.idx));
       clearSelection();
     });
 
@@ -649,87 +538,58 @@ function renderAll(){
     renderTile(i);
   }
 
-  setStatus("Ready. Tap a tile to choose Replace / Reveal / Cancel.");
-  // update drawer status too
-  drawerEl.querySelector("#status").textContent = "Ready. Tap a tile to choose Replace / Reveal / Cancel.";
-  updateUndoButton();
+  setStatusAll("Ready. Tap a tile to choose Replace / Reveal / Cancel.");
+  updateUndoButtons();
 }
 
 function renderTile(i){
   const tile = gridEl.querySelector(`.tile[data-idx="${i}"]`);
   if (!tile) return;
-
   const imgEl = tile.querySelector("img");
-  const imgIdx = state.tileImgIdx[i];
-  const img = deck.images[imgIdx];
-  imgEl.src = img.src;
-
-  if (state.revealed[i]) tile.classList.add("revealed");
-  else tile.classList.remove("revealed");
+  imgEl.src = deck.images[state.tileImgIdx[i]].src;
+  tile.classList.toggle("revealed", !!state.revealed[i]);
 }
 
 function doReveal(idx){
   if (state.revealed[idx]) return;
   state.revealed[idx] = true;
   actionStack.push({ type:"reveal", idx });
-  updateUndoButton();
+  updateUndoButtons();
   renderTile(idx);
   try { if (navigator.vibrate) navigator.vibrate(15); } catch(_) {}
 }
 
 function doReplace(idx){
   if (state.revealed[idx]) return;
-
   const exclude = new Set(state.tileImgIdx);
   const next = bag.drawNext(exclude);
-
   const prev = state.tileImgIdx[idx];
   if (next === prev) return;
-
   state.tileImgIdx[idx] = next;
   actionStack.push({ type:"replace", idx, prevImgIdx: prev });
-  updateUndoButton();
+  updateUndoButtons();
   renderTile(idx);
 }
 
 document.addEventListener("click", (e) => {
-  const tile = e.target.closest(".tile");
-  if (!tile) clearSelection();
+  if (!e.target.closest(".tile")) clearSelection();
 });
 
-/** Drawer behavior */
-drawerBtn.addEventListener("click", () => {
-  drawerOverlay.classList.add("open");
-});
-drawerOverlay.addEventListener("click", (e) => {
-  if (e.target === drawerOverlay) drawerOverlay.classList.remove("open");
-});
+drawerBtn.addEventListener("click", () => drawerOverlay.classList.add("open"));
+drawerOverlay.addEventListener("click", (e) => { if (e.target === drawerOverlay) drawerOverlay.classList.remove("open"); });
 
-/** Fit board to screen without scrolling */
 function computeBoardSize(){
-  const root = document.documentElement;
-
-  // Available width depends on whether sidebar is visible
   const isSidebarVisible = window.matchMedia("(min-width: 861px)").matches;
   const gap = 14;
-
-  const w = window.innerWidth;
-  const h = window.innerHeight;
-
-  const safeX = 0; // already handled by padding env(...) in .app
-  const safeY = 0;
-
   const sideW = isSidebarVisible ? 330 : 0;
-  const availW = w - sideW - (gap*3) - safeX; // app padding + middle gap
-  const availH = h - (gap*2) - safeY;
-
+  const availW = window.innerWidth - sideW - (gap*3);
+  const availH = window.innerHeight - (gap*2);
   const size = Math.max(260, Math.floor(Math.min(availW, availH)));
-  root.style.setProperty("--boardSize", size + "px");
+  document.documentElement.style.setProperty("--boardSize", size + "px");
 }
 window.addEventListener("resize", computeBoardSize);
 window.addEventListener("orientationchange", computeBoardSize);
 
-/** Boot */
 async function loadDeck(deckUrl){
   const res = await fetch(deckUrl, { cache: "no-store" });
   if (!res.ok) throw new Error("Failed to fetch " + deckUrl + " (" + res.status + ")");
@@ -741,20 +601,11 @@ async function loadDeck(deckUrl){
 
 function initGame(seedStr){
   const { roles, startingTeam } = makeRoles(seedStr);
-
   const rng = makeRng(seedStr + "|images");
   const allIdx = Array.from({length: deck.images.length}, (_,i)=>i);
   shuffleInPlace(allIdx, rng);
   const tileImgIdx = allIdx.slice(0,25);
-
-  state = {
-    seed: seedStr,
-    roles,
-    startingTeam,
-    tileImgIdx,
-    revealed: Array(25).fill(false)
-  };
-
+  state = { seed: seedStr, roles, startingTeam, tileImgIdx, revealed: Array(25).fill(false) };
   bag = makeBag(seedStr, deck.images.length);
   actionStack = [];
 }
@@ -762,11 +613,9 @@ function initGame(seedStr){
 (async function(){
   try{
     computeBoardSize();
-
     const deckParam = getParam("deck") || "deck.json";
     let seedParam = getParam("seed");
     if (!seedParam) seedParam = randomSeed();
-
     setParams(seedParam, deckParam);
 
     deck = await loadDeck(deckParam);
@@ -774,12 +623,9 @@ function initGame(seedStr){
     renderAll();
   } catch(err){
     console.error(err);
-    // Put error into both panels if possible
-    sidePanelEl.innerHTML = '<div class="title">Error</div><div class="status error" id="status"></div>';
-    drawerEl.innerHTML = sidePanelEl.innerHTML;
-    setStatus(err.message || String(err), true);
-    const drawerStatus = drawerEl.querySelector("#status");
-    if (drawerStatus) { drawerStatus.textContent = err.message || String(err); drawerStatus.className = "status error"; }
+    renderPanel(sidePanelEl);
+    renderPanel(drawerEl);
+    setStatusAll(err.message || String(err), true);
   }
 })();
 </script>
