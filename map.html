@@ -1,1 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Image Codenames — Spymaster Map</title>
+  <style>
+    :root{
+      --bg:#070a10;
+      --text:#e6eefc;
+      --muted:#a6b5d3;
+      --border:rgba(255,255,255,.12);
+      --radius:16px;
+
+      --red:  239, 68, 68;
+      --blue: 59, 130, 246;
+      --gray: 148, 163, 184;
+      --black: 2, 6, 23;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      background:radial-gradient(1100px 800px at 20% 0%, #172a52 0%, var(--bg) 55%);
+      color:var(--text);
+    }
+    .wrap{max-width:820px;margin:0 auto;padding:16px;}
+    .panel{
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(15,23,38,.75);
+      border-radius:var(--radius);
+      padding:14px;
+    }
+    h1{font-size:16px;margin:0}
+    .sub{font-size:12px;color:var(--muted);margin-top:4px}
+    .pillrow{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px}
+    .pill{
+      display:inline-flex;gap:8px;align-items:center;
+      padding:8px 10px;border-radius:999px;
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.10);
+      font-size:12px;color:var(--text);
+    }
+    .pill code{font-weight:900;letter-spacing:.6px}
+    .grid{
+      margin-top:12px;
+      display:grid;
+      grid-template-columns:repeat(5,1fr);
+      gap:10px;
+    }
+    .cell{
+      aspect-ratio: 1 / 1;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.14);
+      box-shadow:0 14px 34px rgba(0,0,0,.32);
+      position:relative;
+      overflow:hidden;
+    }
+    .cell::after{
+      content:"";
+      position:absolute; inset:0;
+      opacity:.95;
+    }
+    .legend{
+      margin-top:12px;
+      display:flex;gap:10px;flex-wrap:wrap;
+      color:var(--muted);font-size:12px;
+    }
+    .key{display:flex;gap:6px;align-items:center}
+    .dot{width:10px;height:10px;border-radius:999px;border:1px solid rgba(255,255,255,.25)}
+    .error{color:#fca5a5;font-weight:800}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="panel">
+      <h1>Spymaster Map</h1>
+      <div class="sub">Keep this hidden from guessers.</div>
+
+      <div class="pillrow">
+        <div class="pill">Seed: <code id="seedText">…</code></div>
+        <div class="pill">Starting team: <code id="startTeam">…</code></div>
+      </div>
+
+      <div id="grid" class="grid"></div>
+
+      <div class="legend">
+        <span class="key"><span class="dot" style="background:rgba(var(--red),.95)"></span> Red</span>
+        <span class="key"><span class="dot" style="background:rgba(var(--blue),.95)"></span> Blue</span>
+        <span class="key"><span class="dot" style="background:rgba(var(--gray),.85)"></span> Neutral</span>
+        <span class="key"><span class="dot" style="background:rgba(var(--black),.95)"></span> Assassin</span>
+      </div>
+
+      <div id="status" class="sub" style="margin-top:8px;"></div>
+    </div>
+  </div>
+
+<script>
+function cyrb128(str) {
+  let h1 = 1779033703, h2 = 3144134277, h3 = 1013904242, h4 = 2773480762;
+  for (let i = 0, k; i < str.length; i++) {
+    k = str.charCodeAt(i);
+    h1 = h2 ^ Math.imul(h1 ^ k, 597399067);
+    h2 = h3 ^ Math.imul(h2 ^ k, 2869860233);
+    h3 = h4 ^ Math.imul(h3 ^ k, 951274213);
+    h4 = h1 ^ Math.imul(h4 ^ k, 2716044179);
+  }
+  h1 = Math.imul(h3 ^ (h1 >>> 18), 597399067);
+  h2 = Math.imul(h4 ^ (h2 >>> 22), 2869860233);
+  h3 = Math.imul(h1 ^ (h3 >>> 17), 951274213);
+  h4 = Math.imul(h2 ^ (h4 >>> 19), 2716044179);
+  return [(h1^h2^h3^h4)>>>0, (h2^h1)>>>0, (h3^h1)>>>0, (h4^h1)>>>0];
+}
+function mulberry32(a) {
+  return function() {
+    let t = a += 0x6D2B79F5;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }
+}
+function makeRng(seedStr){
+  const s = cyrb128(seedStr)[0];
+  return mulberry32(s);
+}
+function shuffleInPlace(arr, rng){
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+function getParam(name){
+  const u = new URL(location.href);
+  return u.searchParams.get(name);
+}
+
+const ROLES = { RED:"red", BLUE:"blue", GRAY:"gray", BLACK:"black" };
+
+function roleCounts(startingTeam){
+  const starter = startingTeam === ROLES.RED ? ROLES.RED : ROLES.BLUE;
+  const other = starter === ROLES.RED ? ROLES.BLUE : ROLES.RED;
+  return { [starter]:9, [other]:8, [ROLES.GRAY]:7, [ROLES.BLACK]:1 };
+}
+function makeRoles(seedStr){
+  const rng = makeRng(seedStr + "|roles");
+  const startingTeam = rng() < 0.5 ? ROLES.RED : ROLES.BLUE;
+  const counts = roleCounts(startingTeam);
+  const roles = [];
+  for (const [r, n] of Object.entries(counts)){
+    for (let i=0;i<n;i++) roles.push(r);
+  }
+  shuffleInPlace(roles, rng);
+  return { roles, startingTeam };
+}
+function cellColor(role){
+  if (role === ROLES.RED) return "rgba(var(--red),.92)";
+  if (role === ROLES.BLUE) return "rgba(var(--blue),.92)";
+  if (role === ROLES.GRAY) return "rgba(var(--gray),.78)";
+  return "rgba(var(--black),.92)";
+}
+
+const seedTextEl = document.getElementById("seedText");
+const startTeamEl = document.getElementById("startTeam");
+const gridEl = document.getElementById("grid");
+const statusEl = document.getElementById("status");
+
+(function(){
+  const seed = getParam("seed");
+  if (!seed){
+    statusEl.textContent = "Missing ?seed=… in the URL.";
+    statusEl.className = "sub error";
+    return;
+  }
+  seedTextEl.textContent = seed;
+
+  const { roles, startingTeam } = makeRoles(seed);
+  startTeamEl.textContent = (startingTeam === ROLES.RED) ? "RED (9)" : "BLUE (9)";
+
+  gridEl.innerHTML = "";
+  for (let i=0;i<25;i++){
+    const cell = document.createElement("div");
+    cell.className = "cell";
+    cell.style.setProperty("--c", cellColor(roles[i]));
+    cell.style.position = "relative";
+    cell.style.overflow = "hidden";
+    cell.style.borderRadius = "14px";
+    cell.style.border = "1px solid rgba(255,255,255,.14)";
+    cell.style.boxShadow = "0 14px 34px rgba(0,0,0,.32)";
+    cell.style.background = "rgba(255,255,255,.04)";
+    cell.style.aspectRatio = "1 / 1";
+    cell.innerHTML = `<div style="position:absolute;inset:0;background:${cellColor(roles[i])};opacity:.95;"></div>`;
+    gridEl.appendChild(cell);
+  }
+
+  statusEl.textContent = "Map generated from seed. Starting team has 9 agents.";
+})();
+</script>
+</body>
+</html>
 
