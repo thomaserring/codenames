@@ -1,0 +1,38 @@
+name: Auto-build deck.json
+
+on:
+  push:
+    paths:
+      - "images/**"
+      - "scripts/build-deck.mjs"
+      - ".github/workflows/build-deck.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  build-deck:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Generate deck.json
+        run: node scripts/build-deck.mjs
+
+      - name: Commit deck.json if changed
+        run: |
+          if git diff --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add deck.json
+          git commit -m "Auto-update deck.json"
+          git push
