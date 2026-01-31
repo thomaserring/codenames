@@ -7,32 +7,38 @@
   <style>
     :root{
       --bg:#0b0f14;
+      --panel:#0f1726;
       --text:#e6eefc;
-      --muted:#a6b5d3;
-      --radius:16px;
+      --muted:#9fb0cc;
+      --border:rgba(255,255,255,.10);
+      --shadow:rgba(0,0,0,.35);
+      --radius:18px;
 
       --red:  239, 68, 68;
       --blue: 59, 130, 246;
       --gray: 148, 163, 184;
       --black: 2, 6, 23;
 
-      --sideW: 330px;
       --gap: 14px;
-      --boardSize: 600px; /* updated by JS */
+      --sideW: 320px;
+      --boardSize: 600px; /* JS updates */
     }
+
     *{box-sizing:border-box}
-    html, body { height: 100%; }
+    html, body{height:100%}
     body{
       margin:0;
       font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-      background:radial-gradient(1200px 900px at 20% 0%, #14274f 0%, var(--bg) 55%);
+      background: radial-gradient(1200px 900px at 15% 0%, #142a55 0%, var(--bg) 55%);
       color:var(--text);
       overflow:hidden;
     }
+
     .app{
       height: 100vh;
       height: 100dvh;
-      display:flex;
+      display:grid;
+      grid-template-columns: 1fr var(--sideW);
       gap: var(--gap);
       padding: var(--gap);
       padding-top: calc(var(--gap) + env(safe-area-inset-top));
@@ -41,11 +47,21 @@
       padding-right: calc(var(--gap) + env(safe-area-inset-right));
     }
 
-    .boardArea{ flex:1; min-width:0; display:flex; align-items:center; justify-content:center; }
-    .boardWrap{ width: var(--boardSize); height: var(--boardSize); max-width:100%; max-height:100%; }
+    .boardArea{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-width:0;
+    }
+
+    .board{
+      width: var(--boardSize);
+      height: var(--boardSize);
+    }
 
     .grid{
-      width:100%; height:100%;
+      width:100%;
+      height:100%;
       display:grid;
       grid-template-columns: repeat(5, 1fr);
       grid-template-rows: repeat(5, 1fr);
@@ -54,187 +70,215 @@
 
     .tile{
       position:relative;
-      border-radius:14px;
+      border-radius: 16px;
       overflow:hidden;
-      border:1px solid rgba(255,255,255,.12);
-      background:rgba(255,255,255,.05);
-      box-shadow:0 14px 34px rgba(0,0,0,.35);
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.04);
+      box-shadow: 0 18px 40px rgba(0,0,0,.35);
       cursor:pointer;
       user-select:none;
       transform: translateZ(0);
     }
-    .tile.selected{ outline:3px solid rgba(94,234,212,.55); outline-offset:2px; }
-    .tile img{ width:100%; height:100%; object-fit:cover; display:block; transform:scale(1.02); }
 
+    .tile img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      display:block;
+      transform: scale(1.02);
+    }
+
+    .tile.selected{
+      outline: 3px solid rgba(94,234,212,.60);
+      outline-offset: 2px;
+    }
+
+    /* semi-transparent reveal overlay */
     .revealOverlay{
       position:absolute; inset:0;
-      display:flex; align-items:flex-end; justify-content:flex-start;
-      padding:10px;
       opacity:0;
-      transition:opacity .16s ease;
+      transition: opacity .16s ease;
+      display:flex;
+      align-items:flex-end;
+      padding:10px;
       pointer-events:none;
     }
-    .tile.revealed .revealOverlay{opacity:1;}
+    .tile.revealed .revealOverlay{ opacity:1; }
+
     .tag{
-      display:inline-flex;align-items:center;gap:8px;
-      padding:6px 10px;border-radius:999px;
-      font-size:12px;font-weight:900;letter-spacing:.3px;
-      color:rgba(255,255,255,.92);
-      background:rgba(0,0,0,.22);
+      display:inline-flex; align-items:center; gap:8px;
+      padding:6px 10px;
+      border-radius:999px;
+      background: rgba(0,0,0,.25);
       border:1px solid rgba(255,255,255,.18);
       backdrop-filter: blur(6px);
+      font-size:12px;
+      font-weight:900;
+      letter-spacing:.2px;
+      color: rgba(255,255,255,.92);
     }
-    .dotSmall{width:10px;height:10px;border-radius:999px;background:rgba(255,255,255,.92);}
+    .dotSmall{ width:10px; height:10px; border-radius:999px; background: rgba(255,255,255,.92); }
 
-    .tile.revealed{cursor:default;}
-    .tile.revealed.selected{outline:none;}
+    .tile.revealed{ cursor:default; }
+    .tile.revealed.selected{ outline:none; }
 
+    /* Tile action bar */
     .actions{
       position:absolute;
       left:8px; right:8px; bottom:8px;
-      display:none; gap:8px; z-index:5;
+      display:none;
+      gap:8px;
+      z-index:5;
     }
-    .tile.selected:not(.revealed) .actions{display:flex;}
+    .tile.selected:not(.revealed) .actions{ display:flex; }
+
     .act{
       flex:1;
-      border:1px solid rgba(255,255,255,.14);
-      background:rgba(12,18,30,.72);
-      color:var(--text);
-      border-radius:12px;
       padding:10px 10px;
-      display:flex;gap:8px;align-items:center;justify-content:center;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(12,18,30,.75);
+      color: var(--text);
       font-weight:900;
       cursor:pointer;
-      box-shadow:0 16px 28px rgba(0,0,0,.28);
+      display:flex; gap:8px;
+      align-items:center; justify-content:center;
       backdrop-filter: blur(10px);
+      box-shadow: 0 16px 30px rgba(0,0,0,.32);
       user-select:none;
     }
-    .act svg{width:18px;height:18px}
-    .act:hover{background:rgba(12,18,30,.86);}
-    .act.cancel{flex:0.75; border-color:rgba(248,113,113,.34)}
-    .act.replace{border-color:rgba(94,234,212,.32)}
+    .act:hover{ background: rgba(12,18,30,.90); }
+    .act svg{ width:18px; height:18px; }
+    .act.replace{ border-color: rgba(94,234,212,.35); }
+    .act.cancel{ flex:0.75; border-color: rgba(248,113,113,.35); }
 
+    /* Right panel */
     .side{
-      width: var(--sideW);
-      flex: 0 0 var(--sideW);
       border:1px solid rgba(255,255,255,.10);
-      background:rgba(15,23,38,.72);
+      background: rgba(15,23,38,.72);
       border-radius: var(--radius);
-      box-shadow:0 18px 40px rgba(0,0,0,.35);
+      box-shadow: 0 18px 40px rgba(0,0,0,.35);
       padding: 14px;
-      display:flex; flex-direction:column; gap: 12px;
-      overflow:auto;
+      display:flex;
+      flex-direction:column;
+      gap: 12px;
+      overflow:hidden;
     }
-    .brand{display:flex;gap:10px;align-items:center}
-    .dot{width:10px;height:10px;border-radius:999px;background:#5eead4;box-shadow:0 0 18px rgba(94,234,212,.35);}
-    .title{font-size:16px;margin:0;letter-spacing:.2px;font-weight:900}
-    .sub{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.25}
 
-    .pillrow{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .head{
+      display:flex;
+      gap:10px;
+      align-items:center;
+    }
+    .dot{
+      width:10px; height:10px; border-radius:999px;
+      background:#5eead4;
+      box-shadow:0 0 18px rgba(94,234,212,.35);
+    }
+    .title{ font-weight:950; font-size:16px; margin:0; }
+    .sub{ font-size:12px; color:var(--muted); margin-top:2px; line-height:1.25; }
+
+    .pillrow{ display:flex; gap:10px; flex-wrap:wrap; }
     .pill{
-      display:inline-flex;gap:8px;align-items:center;
-      padding:8px 10px;border-radius:999px;
-      background:rgba(255,255,255,.06);
+      display:inline-flex; gap:8px; align-items:center;
+      padding:8px 10px;
+      border-radius:999px;
       border:1px solid rgba(255,255,255,.10);
-      font-size:12px;color:var(--text);
+      background: rgba(255,255,255,.06);
+      font-size:12px;
     }
-    .pill code{font-weight:900;letter-spacing:.6px}
+    .pill code{ font-weight:950; letter-spacing:.6px; }
 
-    .btnrow{display:flex;gap:10px;flex-wrap:wrap}
+    .btnrow{ display:flex; gap:10px; }
     .btn{
       flex:1;
       border:1px solid rgba(255,255,255,.12);
-      background:rgba(255,255,255,.06);
-      color:var(--text);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
       padding:10px 12px;
       border-radius:12px;
       cursor:pointer;
-      font-weight:900;
-      letter-spacing:.2px;
-      box-shadow:0 12px 28px rgba(0,0,0,.22);
-      display:inline-flex; gap:8px; align-items:center; justify-content:center;
+      font-weight:950;
+      display:flex; gap:8px; align-items:center; justify-content:center;
       user-select:none;
     }
-    .btn:disabled{opacity:.5;cursor:not-allowed}
-    .btn:active{transform:translateY(1px)}
-    .btn.danger{background:rgba(248,113,113,.14);border-color:rgba(248,113,113,.35)}
-    .btn svg{width:18px;height:18px}
+    .btn:disabled{ opacity:.5; cursor:not-allowed; }
+    .btn.danger{ background: rgba(248,113,113,.14); border-color: rgba(248,113,113,.35); }
+    .btn svg{ width:18px; height:18px; }
 
-    .qrBox{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
-    .qrBox img{
-      width:124px;height:124px;border-radius:14px;
-      border:1px solid rgba(255,255,255,.12);
-      background:rgba(255,255,255,.04);
+    .qr{
+      display:flex;
+      gap:12px;
+      align-items:flex-start;
+      justify-content:space-between;
     }
-    .smallMuted{font-size:12px;color:var(--muted);line-height:1.25}
+    .qr img{
+      width:128px; height:128px;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+    }
+    .smallMuted{ font-size:12px; color: var(--muted); line-height:1.25; }
     .smallMuted a{ color: var(--text); text-decoration:none; border-bottom:1px dashed rgba(255,255,255,.25); }
 
-    .status{color:var(--muted);font-size:12px;min-height:18px}
-    .error{color:#fca5a5;font-weight:900}
+    .status{ font-size:12px; color: var(--muted); min-height:18px; }
+    .error{ color:#fca5a5; font-weight:950; }
 
-    /* Drawer for small screens */
-    .drawerBtn{
+    @media (max-width: 900px){
+      /* On small screens: stack (still no scroll). Sidebar overlays via <details>. */
+      .app{ grid-template-columns: 1fr; }
+      .side{ display:none; }
+    }
+
+    /* Simple menu button for small screens */
+    details.menu{
       display:none;
       position:fixed;
       right:14px;
       top: calc(14px + env(safe-area-inset-top));
       z-index:50;
+    }
+    details.menu > summary{
+      list-style:none;
+      cursor:pointer;
       border:1px solid rgba(255,255,255,.14);
-      background:rgba(12,18,30,.78);
-      color:var(--text);
+      background: rgba(12,18,30,.78);
+      color: var(--text);
       padding:10px 12px;
       border-radius:12px;
-      font-weight:900;
-      box-shadow:0 18px 30px rgba(0,0,0,.35);
+      font-weight:950;
+      box-shadow: 0 18px 30px rgba(0,0,0,.35);
       backdrop-filter: blur(10px);
-      cursor:pointer;
+      user-select:none;
     }
-    .drawerBtn svg{width:18px;height:18px;vertical-align:-3px;margin-right:8px}
+    details.menu > summary::-webkit-details-marker{ display:none; }
 
-    .drawerOverlay{display:none}
-    @media (max-width: 860px){
-      .side{display:none}
-      .drawerBtn{display:block}
-      .drawerOverlay{
-        display:none;
-        position:fixed; inset:0;
-        background:rgba(0,0,0,.45);
-        z-index:60;
-      }
-      .drawerOverlay.open{display:block}
-      .drawer{
-        position:fixed;
-        top: calc(var(--gap) + env(safe-area-inset-top));
-        right: calc(var(--gap) + env(safe-area-inset-right));
-        left: calc(var(--gap) + env(safe-area-inset-left));
-        bottom: calc(var(--gap) + env(safe-area-inset-bottom));
-        border-radius: var(--radius);
-        border:1px solid rgba(255,255,255,.10);
-        background:rgba(15,23,38,.92);
-        backdrop-filter: blur(12px);
-        padding:14px;
-        overflow:auto;
-        box-shadow:0 22px 50px rgba(0,0,0,.55);
-      }
+    .menuPanel{
+      margin-top:10px;
+      width: min(92vw, 420px);
+      max-height: calc(100dvh - 100px);
+      overflow:auto;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(15,23,38,.92);
+      border-radius: var(--radius);
+      box-shadow: 0 22px 50px rgba(0,0,0,.55);
+      padding:14px;
+    }
+    @media (max-width: 900px){
+      details.menu{ display:block; }
     }
   </style>
 </head>
 <body>
-  <button id="drawerBtn" class="drawerBtn" aria-label="Open menu">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-      stroke-linecap="round" stroke-linejoin="round">
-      <path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h16"></path>
-    </svg>
-    Menu
-  </button>
 
-  <div id="drawerOverlay" class="drawerOverlay">
-    <div id="drawer" class="drawer"></div>
-  </div>
+  <details class="menu" id="menuDetails">
+    <summary>Menu</summary>
+    <div class="menuPanel" id="menuPanel"></div>
+  </details>
 
   <div class="app">
     <div class="boardArea">
-      <div class="boardWrap">
+      <div class="board">
         <div class="grid" id="grid"></div>
       </div>
     </div>
@@ -243,44 +287,44 @@
   </div>
 
 <script>
-/** ---------- Seed utils (deterministic) ---------- **/
-function cyrb128(str) {
+/** ---------- Deterministic RNG ---------- **/
+function cyrb128(str){
   let h1 = 1779033703, h2 = 3144134277, h3 = 1013904242, h4 = 2773480762;
-  for (let i = 0, k; i < str.length; i++) {
+  for (let i=0,k;i<str.length;i++){
     k = str.charCodeAt(i);
     h1 = h2 ^ Math.imul(h1 ^ k, 597399067);
     h2 = h3 ^ Math.imul(h2 ^ k, 2869860233);
     h3 = h4 ^ Math.imul(h3 ^ k, 951274213);
     h4 = h1 ^ Math.imul(h4 ^ k, 2716044179);
   }
-  h1 = Math.imul(h3 ^ (h1 >>> 18), 597399067);
-  h2 = Math.imul(h4 ^ (h2 >>> 22), 2869860233);
-  h3 = Math.imul(h1 ^ (h3 >>> 17), 951274213);
-  h4 = Math.imul(h2 ^ (h4 >>> 19), 2716044179);
+  h1 = Math.imul(h3 ^ (h1>>>18), 597399067);
+  h2 = Math.imul(h4 ^ (h2>>>22), 2869860233);
+  h3 = Math.imul(h1 ^ (h3>>>17), 951274213);
+  h4 = Math.imul(h2 ^ (h4>>>19), 2716044179);
   return [(h1^h2^h3^h4)>>>0];
 }
-function mulberry32(a) {
-  return function() {
+function mulberry32(a){
+  return function(){
     let t = a += 0x6D2B79F5;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  }
+    t = Math.imul(t ^ (t>>>15), t | 1);
+    t ^= t + Math.imul(t ^ (t>>>7), t | 61);
+    return ((t ^ (t>>>14))>>>0) / 4294967296;
+  };
 }
 function makeRng(seedStr){ return mulberry32(cyrb128(seedStr)[0]); }
 function shuffleInPlace(arr, rng){
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
+  for (let i=arr.length-1;i>0;i--){
+    const j = Math.floor(rng()*(i+1));
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
   return arr;
 }
 function randomSeed(){
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let out = "";
+  let out="";
   for(let i=0;i<8;i++){
     out += chars[Math.floor(Math.random()*chars.length)];
-    if (i===3) out += "-";
+    if(i===3) out += "-";
   }
   return out;
 }
@@ -289,24 +333,23 @@ function setParams(seed, deck){
   const u = new URL(location.href);
   u.searchParams.set("seed", seed);
   if (deck) u.searchParams.set("deck", deck);
-  history.replaceState(null, "", u.toString());
+  history.replaceState(null,"",u.toString());
 }
 
-/** ---------- Game logic ---------- **/
+/** ---------- Game rules ---------- **/
 const ROLES = { RED:"red", BLUE:"blue", GRAY:"gray", BLACK:"black" };
-function roleCounts(startingTeam){
-  const starter = startingTeam === ROLES.RED ? ROLES.RED : ROLES.BLUE;
-  const other = starter === ROLES.RED ? ROLES.BLUE : ROLES.RED;
-  return { [starter]:9, [other]:8, [ROLES.GRAY]:7, [ROLES.BLACK]:1 };
-}
 function makeRoles(seedStr){
   const rng = makeRng(seedStr + "|roles");
   const startingTeam = rng() < 0.5 ? ROLES.RED : ROLES.BLUE;
-  const counts = roleCounts(startingTeam);
+  const starter = startingTeam;
+  const other = starter === ROLES.RED ? ROLES.BLUE : ROLES.RED;
+
   const roles = [];
-  for (const [r, n] of Object.entries(counts)){
-    for (let i=0;i<n;i++) roles.push(r);
-  }
+  for (let i=0;i<9;i++) roles.push(starter);
+  for (let i=0;i<8;i++) roles.push(other);
+  for (let i=0;i<7;i++) roles.push(ROLES.GRAY);
+  roles.push(ROLES.BLACK);
+
   shuffleInPlace(roles, rng);
   return { roles, startingTeam };
 }
@@ -315,6 +358,7 @@ function makeBag(seedStr, deckSize){
   let bag = Array.from({length: deckSize}, (_,i)=>i);
   shuffleInPlace(bag, rng);
   let ptr = 0;
+
   function refill(){
     bag = Array.from({length: deckSize}, (_,i)=>i);
     shuffleInPlace(bag, rng);
@@ -322,7 +366,7 @@ function makeBag(seedStr, deckSize){
   }
   function drawNext(excludeSet){
     let attempts = 0;
-    while (attempts < deckSize * 2) {
+    while (attempts < deckSize * 2){
       if (ptr >= bag.length) refill();
       const idx = bag[ptr++];
       if (!excludeSet.has(idx)) return idx;
@@ -334,31 +378,13 @@ function makeBag(seedStr, deckSize){
   return { drawNext };
 }
 
-/** ---------- UI ---------- **/
-const gridEl = document.getElementById("grid");
-const sidePanelEl = document.getElementById("sidePanel");
-const drawerBtn = document.getElementById("drawerBtn");
-const drawerOverlay = document.getElementById("drawerOverlay");
-const drawerEl = document.getElementById("drawer");
-
-let deck = null;
-let state = null;
-let bag = null;
-let selectedIdx = null;
-let actionStack = [];
-
+/** ---------- UI helpers ---------- **/
 function iconUndo(){return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14l-4-4 4-4"></path><path d="M5 10h9a6 6 0 1 1 0 12h-2"></path></svg>`;}
 function iconRefresh(){return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"></path><path d="M21 3v6h-6"></path></svg>`;}
 function iconSwap(){return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-9 9"></path><path d="M3 12a9 9 0 0 1 9-9"></path><path d="M16 16l-4 4 4 4" transform="translate(0,-8)"></path><path d="M8 8l4-4-4-4" transform="translate(0,8)"></path></svg>`;}
 function iconEye(){return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;}
 function iconX(){return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="M6 6l12 12"></path></svg>`;}
 
-function roleLabel(role){
-  if (role === ROLES.RED) return "RED";
-  if (role === ROLES.BLUE) return "BLUE";
-  if (role === ROLES.GRAY) return "NEUTRAL";
-  return "ASSASSIN";
-}
 function overlayStyle(role){
   if (role === ROLES.RED) return `background: rgba(var(--red), .78);`;
   if (role === ROLES.BLUE) return `background: rgba(var(--blue), .78);`;
@@ -371,12 +397,30 @@ function dotStyle(role){
   if (role === ROLES.GRAY) return `background: rgba(var(--gray), .95);`;
   return `background: rgba(var(--black), .95);`;
 }
+function roleLabel(role){
+  if (role === ROLES.RED) return "RED";
+  if (role === ROLES.BLUE) return "BLUE";
+  if (role === ROLES.GRAY) return "NEUTRAL";
+  return "ASSASSIN";
+}
 
+/** ---------- State ---------- **/
+const gridEl = document.getElementById("grid");
+const sidePanelEl = document.getElementById("sidePanel");
+const menuPanelEl = document.getElementById("menuPanel");
+const menuDetails = document.getElementById("menuDetails");
+
+let deck = null;
+let state = null;  // { seed, roles, startingTeam, tileImgIdx, revealed }
+let bag = null;
+let selectedIdx = null;
+let actionStack = [];
+
+/** ---------- Rendering ---------- **/
 function clearSelection(){
   selectedIdx = null;
   document.querySelectorAll(".tile.selected").forEach(el => el.classList.remove("selected"));
 }
-
 function buildMapUrl(){
   const u = new URL(location.href);
   const base = u.toString().split("?")[0];
@@ -390,11 +434,11 @@ function buildMapUrl(){
 
 function renderPanel(container){
   container.innerHTML = `
-    <div class="brand">
+    <div class="head">
       <div class="dot"></div>
       <div>
         <div class="title">Image Codenames</div>
-        <div class="sub">Board • Tap a tile for actions</div>
+        <div class="sub">Tap a tile → Replace / Reveal / Cancel</div>
       </div>
     </div>
 
@@ -406,82 +450,55 @@ function renderPanel(container){
 
     <div class="btnrow">
       <button class="btn" data-k="undoBtn" disabled>${iconUndo()} Undo</button>
-      <button class="btn danger" data-k="newMapBtn">${iconRefresh()} New map</button>
+      <button class="btn danger" data-k="newBtn">${iconRefresh()} New map</button>
     </div>
 
-    <div class="qrBox">
+    <div class="qr">
       <div style="flex:1; min-width:160px;">
         <div class="smallMuted">Scan to open spymaster map:</div>
-        <div class="smallMuted"><a data-k="mapUrlLink" href="#" target="_blank" rel="noopener">Open map link</a></div>
+        <div class="smallMuted"><a data-k="mapLink" href="#" target="_blank" rel="noopener">Open map link</a></div>
       </div>
-      <img data-k="qrImg" alt="QR code to spymaster map" />
+      <img data-k="qrImg" alt="QR code">
     </div>
 
     <div class="status" data-k="status"></div>
   `;
 
   container.querySelector('[data-k="undoBtn"]').addEventListener("click", undo);
-  container.querySelector('[data-k="newMapBtn"]').addEventListener("click", confirmNewMap);
+  container.querySelector('[data-k="newBtn"]').addEventListener("click", newMap);
 }
-
 function setPanelValues(container){
   container.querySelector('[data-k="seedText"]').textContent = state.seed;
   container.querySelector('[data-k="deckName"]').textContent = deck?.name || "Deck";
   container.querySelector('[data-k="startTeam"]').textContent = (state.startingTeam === ROLES.RED) ? "RED (9)" : "BLUE (9)";
+
   const mapUrl = buildMapUrl();
-  container.querySelector('[data-k="mapUrlLink"]').href = mapUrl;
+  container.querySelector('[data-k="mapLink"]').href = mapUrl;
   container.querySelector('[data-k="qrImg"]').src =
-    "https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=" + encodeURIComponent(mapUrl);
+    "https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=" + encodeURIComponent(mapUrl);
 
-  const undoBtn = container.querySelector('[data-k="undoBtn"]');
-  undoBtn.disabled = actionStack.length === 0;
+  container.querySelector('[data-k="undoBtn"]').disabled = actionStack.length === 0;
 }
-
 function setStatusAll(msg, isError=false){
-  for (const c of [sidePanelEl, drawerEl]){
+  for (const c of [sidePanelEl, menuPanelEl]){
     const s = c.querySelector('[data-k="status"]');
     if (!s) continue;
     s.textContent = msg || "";
     s.className = "status" + (isError ? " error" : "");
   }
 }
-
 function updateUndoButtons(){
-  for (const c of [sidePanelEl, drawerEl]){
+  for (const c of [sidePanelEl, menuPanelEl]){
     const b = c.querySelector('[data-k="undoBtn"]');
     if (b) b.disabled = actionStack.length === 0;
   }
 }
 
-function undo(){
-  const a = actionStack.pop();
-  if (!a) return;
-  if (a.type === "reveal"){
-    state.revealed[a.idx] = false;
-    renderTile(a.idx);
-  } else if (a.type === "replace"){
-    state.tileImgIdx[a.idx] = a.prevImgIdx;
-    renderTile(a.idx);
-  }
-  updateUndoButtons();
-}
-
-function confirmNewMap(){
-  if (!confirm("Create a NEW map and NEW images? (This resets the board)")) return;
-  const deckParam = getParam("deck") || "deck.json";
-  const seed = randomSeed();
-  const u = new URL(location.href);
-  u.searchParams.set("seed", seed);
-  u.searchParams.set("deck", deckParam);
-  location.href = u.toString();
-}
-
-function renderAll(){
+function renderBoard(){
   renderPanel(sidePanelEl);
-  renderPanel(drawerEl);
-
+  renderPanel(menuPanelEl);
   setPanelValues(sidePanelEl);
-  setPanelValues(drawerEl);
+  setPanelValues(menuPanelEl);
 
   gridEl.innerHTML = "";
   for (let i=0;i<25;i++){
@@ -498,9 +515,9 @@ function renderAll(){
         </div>
       </div>
       <div class="actions">
-        <button class="act replace" title="Replace image">${iconSwap()} Replace</button>
-        <button class="act reveal" title="Reveal color">${iconEye()} Reveal</button>
-        <button class="act cancel" title="Cancel">${iconX()}</button>
+        <button class="act replace">${iconSwap()} Replace</button>
+        <button class="act reveal">${iconEye()} Reveal</button>
+        <button class="act cancel">${iconX()}</button>
       </div>
     `;
 
@@ -508,80 +525,73 @@ function renderAll(){
       const idx = Number(tile.dataset.idx);
       if (state.revealed[idx]) return;
       if (e.target.closest(".act")) return;
-
       if (selectedIdx === idx) clearSelection();
-      else {
-        clearSelection();
-        selectedIdx = idx;
-        tile.classList.add("selected");
-      }
+      else { clearSelection(); selectedIdx = idx; tile.classList.add("selected"); }
     });
 
-    tile.querySelector(".act.cancel").addEventListener("click", (e) => {
-      e.stopPropagation();
-      clearSelection();
-    });
-
-    tile.querySelector(".act.reveal").addEventListener("click", (e) => {
-      e.stopPropagation();
-      doReveal(Number(tile.dataset.idx));
-      clearSelection();
-    });
-
-    tile.querySelector(".act.replace").addEventListener("click", (e) => {
-      e.stopPropagation();
-      doReplace(Number(tile.dataset.idx));
-      clearSelection();
-    });
+    tile.querySelector(".act.cancel").addEventListener("click", (e)=>{ e.stopPropagation(); clearSelection(); });
+    tile.querySelector(".act.reveal").addEventListener("click", (e)=>{ e.stopPropagation(); reveal(i); clearSelection(); });
+    tile.querySelector(".act.replace").addEventListener("click", (e)=>{ e.stopPropagation(); replace(i); clearSelection(); });
 
     gridEl.appendChild(tile);
     renderTile(i);
   }
 
-  setStatusAll("Ready. Tap a tile to choose Replace / Reveal / Cancel.");
-  updateUndoButtons();
+  setStatusAll("Ready.");
 }
 
 function renderTile(i){
   const tile = gridEl.querySelector(`.tile[data-idx="${i}"]`);
   if (!tile) return;
-  const imgEl = tile.querySelector("img");
-  imgEl.src = deck.images[state.tileImgIdx[i]].src;
+  tile.querySelector("img").src = deck.images[state.tileImgIdx[i]].src;
   tile.classList.toggle("revealed", !!state.revealed[i]);
 }
 
-function doReveal(idx){
+/** ---------- Actions ---------- **/
+function undo(){
+  const a = actionStack.pop();
+  if (!a) return;
+  if (a.type === "reveal"){ state.revealed[a.idx] = false; renderTile(a.idx); }
+  if (a.type === "replace"){ state.tileImgIdx[a.idx] = a.prev; renderTile(a.idx); }
+  updateUndoButtons();
+}
+function newMap(){
+  if (!confirm("Create a NEW map and NEW images? (This resets the board)")) return;
+  const deckParam = getParam("deck") || "deck.json";
+  const seed = randomSeed();
+  const u = new URL(location.href);
+  u.searchParams.set("seed", seed);
+  u.searchParams.set("deck", deckParam);
+  location.href = u.toString();
+}
+function reveal(idx){
   if (state.revealed[idx]) return;
   state.revealed[idx] = true;
-  actionStack.push({ type:"reveal", idx });
+  actionStack.push({type:"reveal", idx});
   updateUndoButtons();
   renderTile(idx);
-  try { if (navigator.vibrate) navigator.vibrate(15); } catch(_) {}
+  try { if (navigator.vibrate) navigator.vibrate(12); } catch(_) {}
 }
-
-function doReplace(idx){
+function replace(idx){
   if (state.revealed[idx]) return;
   const exclude = new Set(state.tileImgIdx);
   const next = bag.drawNext(exclude);
   const prev = state.tileImgIdx[idx];
   if (next === prev) return;
   state.tileImgIdx[idx] = next;
-  actionStack.push({ type:"replace", idx, prevImgIdx: prev });
+  actionStack.push({type:"replace", idx, prev});
   updateUndoButtons();
   renderTile(idx);
 }
 
-document.addEventListener("click", (e) => {
-  if (!e.target.closest(".tile")) clearSelection();
-});
+/** Close selection if clicking outside tiles */
+document.addEventListener("click", (e)=>{ if (!e.target.closest(".tile")) clearSelection(); });
 
-drawerBtn.addEventListener("click", () => drawerOverlay.classList.add("open"));
-drawerOverlay.addEventListener("click", (e) => { if (e.target === drawerOverlay) drawerOverlay.classList.remove("open"); });
-
+/** Fit board perfectly to viewport */
 function computeBoardSize(){
-  const isSidebarVisible = window.matchMedia("(min-width: 861px)").matches;
   const gap = 14;
-  const sideW = isSidebarVisible ? 330 : 0;
+  const isWide = window.matchMedia("(min-width: 901px)").matches;
+  const sideW = isWide ? 320 : 0;
   const availW = window.innerWidth - sideW - (gap*3);
   const availH = window.innerHeight - (gap*2);
   const size = Math.max(260, Math.floor(Math.min(availW, availH)));
@@ -590,6 +600,7 @@ function computeBoardSize(){
 window.addEventListener("resize", computeBoardSize);
 window.addEventListener("orientationchange", computeBoardSize);
 
+/** Boot */
 async function loadDeck(deckUrl){
   const res = await fetch(deckUrl, { cache: "no-store" });
   if (!res.ok) throw new Error("Failed to fetch " + deckUrl + " (" + res.status + ")");
@@ -599,12 +610,14 @@ async function loadDeck(deckUrl){
   return d;
 }
 
-function initGame(seedStr){
+function init(seedStr){
   const { roles, startingTeam } = makeRoles(seedStr);
+
   const rng = makeRng(seedStr + "|images");
   const allIdx = Array.from({length: deck.images.length}, (_,i)=>i);
   shuffleInPlace(allIdx, rng);
   const tileImgIdx = allIdx.slice(0,25);
+
   state = { seed: seedStr, roles, startingTeam, tileImgIdx, revealed: Array(25).fill(false) };
   bag = makeBag(seedStr, deck.images.length);
   actionStack = [];
@@ -619,12 +632,14 @@ function initGame(seedStr){
     setParams(seedParam, deckParam);
 
     deck = await loadDeck(deckParam);
-    initGame(seedParam);
-    renderAll();
+    init(seedParam);
+    renderBoard();
+    // if menu open on mobile and you tap buttons, close it
+    menuDetails.addEventListener("toggle", () => {});
   } catch(err){
     console.error(err);
     renderPanel(sidePanelEl);
-    renderPanel(drawerEl);
+    renderPanel(menuPanelEl);
     setStatusAll(err.message || String(err), true);
   }
 })();
