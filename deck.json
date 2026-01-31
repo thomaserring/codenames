@@ -1,1 +1,8 @@
+{
+  "name": "My Deck",
+  "images": [
+    { "id": "img001", "src": "images/img001.webp" },
+    { "id": "img002", "src": "images/img002.webp" }
+  ]
+}
 
